@@ -8,7 +8,6 @@ from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import accuracy_score
-import time
 import pandas as pd
 import seaborn as sns
 
