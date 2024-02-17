@@ -132,14 +132,3 @@ class App:
                 c=self.y, alpha=0.8,
                 cmap='viridis')
         st.pyplot(fig)
-
-        # fig = self.create_sinusoid()
-        #
-        # #plt.show()
-        # st.pyplot(fig)
-        #
-        # for i in range(100):
-        #     st.write("hello")
-        #     time.sleep(1)
-
-        # st.video("https://youtu.be/yVV_t_Tewvs")
