@@ -2,7 +2,7 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import datasets
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.model_selection import train_test_split, GridSearchCV, KFold
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
@@ -29,13 +29,16 @@ class App:
             self.generate()
     
     def Init_Streamlit_Page(self):
-        st.title('Streamlit Application for Machine Learning Classification')
+        st.title('Streamlit Application for Machine Learning Classification of Breast Cancer Wisconsin Dataset')
 
         st.write("""
         # How this application works:
         1. **Select a dataset**: You can either upload your own CSV file, or use the preloaded 'Breast Cancer Wisconsin' dataset.
         2. **Select a classifier**: Choose between 'KNN', 'SVM', or 'Gaussian Naive Bayes'.
-        3. **Enable Grid Search**: If you want to use Grid Search for hyperparameter tuning, check this box. If activated, the best parameters will be determined and the model will be trained with those parameters.
+        3. **Enable Grid Search**: If you want to use Grid Search for hyperparameter tuning,
+                check this box. If activated, the best parameters will be determined and 
+                the model will be trained with those parameters. If you prefer to manually 
+                select the parameters and test the model yourself, **please uncheck this box**.
         4. **Set classifier parameters**: If you selected 'SVM', adjust the 'C' parameter using the slider. If you selected 'KNN', adjust the 'K' parameter.
         5. **Run the application**: The application will train the selected classifier on the chosen dataset, and display the evaluation metrics and confusion matrix.
         """)
@@ -53,7 +56,6 @@ class App:
         self.enable_grid_search = st.sidebar.checkbox('Enable Grid Search')
         
     def get_dataset(self):
-        
         if self.dataset_name == 'Breast Cancer Wisconsin':
             self.data = self.load_breast_cancer()
         elif self.dataset_name == 'Upload CSV':
@@ -65,6 +67,8 @@ class App:
             st.write('No dataset selected')
             
         if self.data is not None:
+            st.write("Diagnosis Value Counts:")
+            st.write(self.data['diagnosis'].value_counts())
             st.write('The first 10 rows of the dataset:')
             st.dataframe(self.data.head(10))
             st.write('The last 10 rows of the dataset with irrelevant columns removed:')
@@ -121,11 +125,11 @@ class App:
     def get_classifier(self):
         if self.enable_grid_search:
             if self.classifier_name == 'SVM':
-                param_grid = {'C': np.arange(0.1,25,0.5)}  
-                self.clf = GridSearchCV(SVC(), param_grid,refit = True)
+                param_grid = {'C': np.arange(0.01,5,0.1)}  
+                self.clf = GridSearchCV(SVC(), param_grid,cv=KFold(n_splits=10))
             elif self.classifier_name == 'KNN':
                 param_grid = {'n_neighbors': range(1, 25)}
-                self.clf = GridSearchCV(KNeighborsClassifier(), param_grid,cv=10,scoring='accuracy')
+                self.clf = GridSearchCV(KNeighborsClassifier(), param_grid,cv=KFold(n_splits=10),scoring='accuracy')
             elif self.classifier_name == 'Gaussian Naive Bayes':
                 self.clf = GaussianNB()
         else:
@@ -143,7 +147,7 @@ class App:
 
         if self.enable_grid_search and not self.classifier_name == 'Gaussian Naive Bayes':
             grid_search = self.clf.fit(X_train, y_train)
-            st.write(f'Best Parameters: {grid_search.best_params_}')
+            st.write(f'### Best Parameter: {grid_search.best_params_}')
         
         else:
             self.clf.fit(X_train, y_train)
@@ -164,7 +168,12 @@ class App:
         st.write(f'F1 Score =', f1)
         st.write('## Confusion Matrix:')
         fig = plt.figure(figsize=(8, 6))
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Reds')
+        group_names = ["True Negative","False Positive",'False Negative',"True Positive"]
+        group_counts = ['{0:0.0f}'.format(value) for value in cm.flatten()]
+        group_percentages = ['{0:.2%}'.format(value) for value in cm.flatten()/np.sum(cm)]
+        labels = [f"{v1}\n{v2}\n{v3}" for v1, v2, v3 in zip(group_names,group_counts,group_percentages)]
+        labels = np.asarray(labels).reshape(2,2)
+        sns.heatmap(cm, annot=labels, fmt='', cmap='Reds')
         plt.xlabel('y_pred')
         plt.ylabel('y_true')
         plt.title('Confusion Matrix')
