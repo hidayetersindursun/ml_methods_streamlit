@@ -3,11 +3,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import datasets
 from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.decomposition import PCA
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
-from sklearn.metrics import accuracy_score,precision_score, recall_score, f1_score, classification_report, confusion_matrix
+from sklearn.metrics import accuracy_score,precision_score, recall_score, f1_score, confusion_matrix
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
 import seaborn as sns
@@ -30,11 +29,15 @@ class App:
             self.generate()
     
     def Init_Streamlit_Page(self):
-        st.title('Streamlit Example')
+        st.title('Streamlit Application for Machine Learning Classification')
 
         st.write("""
-        # Explore different classifier and datasets
-        Which one is the best?
+        # How this application works:
+        1. **Select a dataset**: You can either upload your own CSV file, or use the preloaded 'Breast Cancer Wisconsin' dataset.
+        2. **Select a classifier**: Choose between 'KNN', 'SVM', or 'Gaussian Naive Bayes'.
+        3. **Enable Grid Search**: If you want to use Grid Search for hyperparameter tuning, check this box.
+        4. **Set classifier parameters**: If you selected 'SVM', adjust the 'C' parameter using the slider. If you selected 'KNN', adjust the 'K' parameter.
+        5. **Run the application**: The application will train the selected classifier on the chosen dataset, and display the evaluation metrics and confusion matrix.
         """)
 
         self.dataset_name = st.sidebar.selectbox(
@@ -162,4 +165,7 @@ class App:
         st.write('## Confusion Matrix:')
         fig = plt.figure(figsize=(8, 6))
         sns.heatmap(cm, annot=True, fmt='d', cmap='Reds')
+        plt.xlabel('y_pred')
+        plt.ylabel('y_true')
+        plt.title('Confusion Matrix')
         st.pyplot(fig)
