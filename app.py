@@ -35,7 +35,7 @@ class App:
         # How this application works:
         1. **Select a dataset**: You can either upload your own CSV file, or use the preloaded 'Breast Cancer Wisconsin' dataset.
         2. **Select a classifier**: Choose between 'KNN', 'SVM', or 'Gaussian Naive Bayes'.
-        3. **Enable Grid Search**: If you want to use Grid Search for hyperparameter tuning, check this box.
+        3. **Enable Grid Search**: If you want to use Grid Search for hyperparameter tuning, check this box. If activated, the best parameters will be determined and the model will be trained with those parameters.
         4. **Set classifier parameters**: If you selected 'SVM', adjust the 'C' parameter using the slider. If you selected 'KNN', adjust the 'K' parameter.
         5. **Run the application**: The application will train the selected classifier on the chosen dataset, and display the evaluation metrics and confusion matrix.
         """)
@@ -121,13 +121,13 @@ class App:
     def get_classifier(self):
         if self.enable_grid_search:
             if self.classifier_name == 'SVM':
-                param_grid = {'C': np.arange(0.1,25,0.1)}  
+                param_grid = {'C': np.arange(0.1,25,0.5)}  
                 self.clf = GridSearchCV(SVC(), param_grid,refit = True)
             elif self.classifier_name == 'KNN':
                 param_grid = {'n_neighbors': range(1, 25)}
                 self.clf = GridSearchCV(KNeighborsClassifier(), param_grid,cv=10,scoring='accuracy')
-            else:
-                pass
+            elif self.classifier_name == 'Gaussian Naive Bayes':
+                self.clf = GaussianNB()
         else:
             if self.classifier_name == 'SVM':
                 self.clf  = SVC(C=self.params['C'])
@@ -141,7 +141,7 @@ class App:
         #### CLASSIFICATION ####
         X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=0.2, random_state=42)
 
-        if self.enable_grid_search:
+        if self.enable_grid_search and not self.classifier_name == 'Gaussian Naive Bayes':
             grid_search = self.clf.fit(X_train, y_train)
             st.write(f'Best Parameters: {grid_search.best_params_}')
         
