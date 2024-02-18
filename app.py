@@ -8,6 +8,7 @@ from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import accuracy_score
+
 import pandas as pd
 import seaborn as sns
 
@@ -16,7 +17,7 @@ class App:
         self.dataset_name = None
         self.classifier_name = None
         self.Init_Streamlit_Page()
-
+        self.data = None
         self.params = dict()
         self.clf = None
         self.X, self.y = None, None
@@ -24,7 +25,8 @@ class App:
     def run(self):
         self.get_dataset()
         self.add_parameter_ui()
-        self.generate()
+        if self.data is not None:
+            self.generate()
     
     def Init_Streamlit_Page(self):
         st.title('Streamlit Example')
@@ -36,7 +38,7 @@ class App:
 
         self.dataset_name = st.sidebar.selectbox(
             'Select Dataset',
-            ('Breast Cancer Wisconsin','Iris',)
+            ('Uploaded CSV', 'Breast Cancer Wisconsin',)
         )
         st.write(f"## {self.dataset_name} Dataset")
 
@@ -44,41 +46,55 @@ class App:
             'Select classifier',
             ('KNN', 'SVM', 'Gaussian Naive Bayes')
         )
+    
     def get_dataset(self):
-        data = None
+        
         if self.dataset_name == 'Breast Cancer Wisconsin':
-            data = self.load_breast_cancer()
-        elif self.dataset_name == 'Iris':
-            data = datasets.load_iris()
-            data = pd.DataFrame(data=data.data, columns=data.feature_names)
-            print(type(data))
+            self.data = self.load_breast_cancer()
+        elif self.dataset_name == 'Uploaded CSV':
+            uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
+            if uploaded_file is not None:
+                st.write("filename:", uploaded_file.name)
+                self.data = self.load_from_csv(uploaded_file)
         else:
             st.write('No dataset selected')
             
-        st.write('The first 10 rows of the dataset:')
-        st.dataframe(data.head(10))
-        st.write('The last 10 rows of the dataset with irrelevant columns removed:')
-        st.dataframe(data.tail(10))
-        self.preprocess(data)
+        if self.data is not None:
+            st.write('The first 10 rows of the dataset:')
+            st.dataframe(self.data.head(10))
+            st.write('The last 10 rows of the dataset with irrelevant columns removed:')
+            if 'id' and 'Unnamed: 32' in self.data.columns:
+                self.data.drop(columns=['id', 'Unnamed: 32'], axis=1, inplace=True)
+            st.dataframe(self.data.tail(10))
+            self.preprocess(self.data)
     
+    def load_from_csv(self, uploaded_file):
+        data = pd.read_csv(uploaded_file)
+        return data
+
     def load_breast_cancer(self):
         data = pd.read_csv('data.csv')
-        data.drop(columns=['id', 'Unnamed: 32'], axis=1, inplace=True)
         return data
     
     def preprocess(self,df):
         df['diagnosis'] = df['diagnosis'].map({'M': 1, 'B': 0})
         self.X = df.drop('diagnosis', axis=1) # Features
+        #print(f"X: {self.X.shape}")
         self.y = df['diagnosis'] # Target variable
+        #print(f"y: {self.y.shape}")
+        self.plot_correlation(df)
+        self.plot_scatter(df)
         
+    def plot_correlation(self, df):
         st.subheader('Correlation Matrix')
         fig = plt.figure(figsize=(8, 6))
         sns.heatmap(df.corr(), annot=False, cmap='coolwarm', linewidths=0.5)
         st.pyplot(fig)
-        
+    
+    def plot_scatter(self, df):
         st.subheader('Scatter Plot: radius_mean vs texture_mean')
         malignant_data = df[df['diagnosis'] == 1]  # Extract malignant data
-        benign_data = df[df['diagnosis'] == 0]  # Extract benign data
+        benign_data = df[df['diagnosis'] == 0] # Extract benign data
         fig2 = plt.figure(figsize=(10, 8))
         sns.scatterplot(x='radius_mean', y='texture_mean', data=malignant_data, label='Malignant', color='red')
         sns.scatterplot(x='radius_mean', y='texture_mean', data=benign_data, label='Benign', color='green')
