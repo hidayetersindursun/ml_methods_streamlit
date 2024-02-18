@@ -8,12 +8,13 @@ You need these dependencies:
 pip install streamlit
 pip install scikit-learn
 pip install matplotlib
+pip install seaborn
 ```
 
 ## Usage - Local
 Run
 ```console
-streamlit run main.py
+python -m streamlit  run main.py --server.enableXsrfProtection=false
 ```
 
 ## Usage - Docker
